@@ -1,4 +1,5 @@
 <?php
+    error_reporting(E_ALL);
 
     /**
      * GitHub webhook handler template.
@@ -79,6 +80,8 @@
     # https://developer.github.com/v3/activity/events/types/
     $payload = json_decode($json);
 
+    
+    
     switch(strtolower($_SERVER["HTTP_X_GITHUB_EVENT"])) 
     {
         case "ping":
@@ -86,7 +89,7 @@
             break;
 
         case "push":
-            echo "Working";
+            cloneRepo($payload);
             break;
 
     //	case 'create':
@@ -98,5 +101,156 @@
             print_r($payload); # For debug only. Can be found in GitHub hook log.
             die();
             break;
+    }
+    
+    function cloneRepo($payload)
+    {
+        if(isset($_GET['projectpath']))
+        {
+            $fullpath = $_GET['projectpath'] . "/" . $payload->repository->name . "/";
+        }
+        else
+        {
+            $fullpath = $payload->repository->name;
+        } 
+        
+        $gitpath = "";
+        
+        // 1. Check if git is installed
+        if(!isGitInstalled())
+        {
+            echo "Git is not installed" . "\r\n";
+            return false;
+        }
+        else
+        {
+            $gitpath = exec("which git");
+        }
+        
+        // 2. Resolve if we are cloning some other branch than master
+        $branch = "";
+    
+        if(isset($_GET["branch"]))
+        {           
+            if(branchExists($payload->repository->clone_url, $_GET["branch"]))
+            {
+                $branch = "-b " . $_GET["branch"] . " --single-branch ";
+            }
+            else
+            {
+                echo "Branch does not exist, cloning without branch handle" . "\r\n";
+                $branch = "";
+            } 
+        }
+        else
+        {
+            $branch = "";
+        }      
+        
+        $gitcommand = "";
+        $pull = false;
+        
+        if(isRepo($fullpath))
+        {
+            $gitcommand .= $gitpath . " -C " . $fullpath . " pull ";
+            $pull = true;
+        }
+        else
+        {
+            $gitcommand .= $gitpath . " clone ";
+        }
+        
+        if(!$pull)
+            $gitcommand .= $branch;
+        
+        $gitcommand .= $payload->repository->clone_url;
+        
+        if(!$pull)
+            $gitcommand .= " " . $fullpath;
+        
+        echo $gitcommand . "\r\n";
+        
+        
+        if($pull)
+        {
+            echo "Resetting HEAD before pull\r\n";
+            
+            $rout = null;
+            $rval = null;
+            exec($gitpath . " -C " . $fullpath . " reset --hard HEAD", $rout, $rval);
+            
+            print_r($rout);
+            echo "\r\n";
+            echo "Value: " . $rval . "\r\n";
+        }
+        
+        if(!$pull)
+        {
+            echo "Mkdir before clone so PHP gets rights to the folder\r\n";
+            
+            $mout = null;
+            $mval = null;
+            exec("mkdir -p " . $fullpath . " 2->&1", $mout, $mval);
+            
+            print_r($mout);
+            echo "\r\n";
+            echo "Value: " . $mval . "\r\n";
+        }
+        
+        $gout = null;
+        $gval = null;
+        exec($gitcommand, $gout, $gval);
+        
+        print_r($gout);
+        echo "\r\n";
+        echo "Value: " . $gval . "\r\n";
+
+    }
+    
+    function branchExists($repourl, $branch)
+    {
+        $branches = array();
+            
+        exec("git ls-remote --heads " . $repourl, $branches);
+        
+        $doesbranchexist = false;
+        
+        foreach($branches as $b) 
+        {
+            if(strpos($b, $branch) !== false)
+            {
+                $doesbranchexist = true;
+                break;
+            }
+        }      
+        return $doesbranchexist;
+    }
+    
+    function isGitInstalled()
+    {
+        if(strlen(exec("which git")) > 0)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
+    function isRepo($path)
+    {
+        $out = null;
+        $ec = null;
+        exec("git -C " . $path . " status", $out, $ec);
+
+        if($ec === 0)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        } 
     }
 ?>

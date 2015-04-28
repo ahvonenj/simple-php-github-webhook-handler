@@ -1,6 +1,6 @@
-# simple-php-github-webhook-handler
+# "simple"-php-github-webhook-handler
 
-Simple Github webhook handler in PHP.
+"Simple" Github webhook handler in PHP.
 
 Original webhook handler was good, but a bit outdated and I did not like the syntax / code formatting.
 

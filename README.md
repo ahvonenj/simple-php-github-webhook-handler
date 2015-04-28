@@ -12,11 +12,13 @@ So pulling and git repository with PHP is not too simple, but not too hard eithe
 
 **PHP does not have git in its path**
 
-This means that ```exec("git something")``` will not work. Instead you have to get the full path with PHP first by using ```$out = null; exec("which git", $out)``` with php and then use the path returned like ```exec($out . " pull")``` for example.
+This means that ```exec("git something");``` will not work. Instead you have to get the full path with PHP first by using ```$out = null; exec("which git", $out);``` with php and then use the path returned like ```exec($out . " pull");``` for example.
 
 **PHP needs permission to the repository folder**
 
 This means that you must execute ```chown -R www-data:www-data repository/``` command to the repository folder and after that ```chmod -R g+s repository/``` to the same folder.
+
+If you are not sure about the username of apache / PHP, you can check that by running ```echo exec("whoami");``` with PHP.
 
 **PHP's known_hosts file**
 

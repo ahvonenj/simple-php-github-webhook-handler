@@ -6,6 +6,22 @@ Original webhook handler was good, but a bit outdated and I did not like the syn
 
 ## Usage
 
+### Installation
+
+So pulling and git repository with PHP is not too simple, but not too hard either. Here are the steps I did to make it work.
+
+**PHP does not have git in its path**
+
+This means that ```exec("git something")``` will not work. Instead you have to get the full path with PHP first by using ```$out = null; exec("which git", $out)``` with php and then use the path returned like ```exec($out . " pull")``` for example.
+
+**PHP needs permission to the repository folder**
+
+This means that you must execute ```chown -R www-data:www-data repository/``` command to the repository folder and after that ```chmod -R g+s repository/``` to the same folder.
+
+**PHP's known_hosts file**
+
+You must do the initial pull by yourself with a ```sudo -u www-data git -C repository/ pull``` command. This adds the remote to the PHP's known_hosts file. Otherwise you will get a host key verification failed error.
+
 ### Secret
 
 Just modify the ```$hookSecret = "secret";``` and remember to set the same secret in the webhook.

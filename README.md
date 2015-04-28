@@ -20,6 +20,8 @@ This means that you must execute ```chown -R www-data:www-data repository/``` co
 
 If you are not sure about the username of apache / PHP, you can check that by running ```echo exec("whoami");``` with PHP.
 
+Note: You need to clone the repository first and then give the rights and the ownerships.
+
 **PHP's known_hosts file**
 
 You must do the initial pull by yourself with a ```sudo -u www-data git -C repository/ pull``` command. This adds the remote to the PHP's known_hosts file. Otherwise you will get a host key verification failed error.

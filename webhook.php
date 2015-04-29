@@ -1,4 +1,5 @@
 <?php
+    error_reporting(E_ALL);
 
     /**
      * GitHub webhook handler template.
@@ -79,6 +80,8 @@
     # https://developer.github.com/v3/activity/events/types/
     $payload = json_decode($json);
 
+    
+    
     switch(strtolower($_SERVER["HTTP_X_GITHUB_EVENT"])) 
     {
         case "ping":
@@ -86,7 +89,7 @@
             break;
 
         case "push":
-            echo "Working";
+            getRepo($payload);
             break;
 
     //	case 'create':
@@ -98,5 +101,107 @@
             print_r($payload); # For debug only. Can be found in GitHub hook log.
             die();
             break;
+    }
+    
+    function getRepo($payload)
+    {
+        if(isset($_GET['projectpath']))
+        {
+            $fullpath = $_GET['projectpath'] . "/" . $payload->repository->name . "/";
+        }
+        else
+        {
+            $fullpath = $payload->repository->name;
+        } 
+        
+        $gitpath = "";
+        
+        // 1. Check if git is installed
+        if(!isGitInstalled())
+        {
+            echo "Git is not installed" . "\r\n";
+            return false;
+        }
+        else
+        {
+            $gitpath = exec("which git");
+        }
+           
+        if(!isRepo($fullpath))
+        {
+            echo "Project path not a repository" . "\r\n";
+            return false;
+        }
+           
+        $gitcommand = $gitpath . " -C " . $fullpath . " pull ";
+        $gitcommand .= $payload->repository->clone_url;
+        
+        echo $gitcommand . "\r\n";            
+
+        echo "Resetting HEAD before pull\r\n";
+            
+        $rout = null;
+        $rval = null;
+        exec($gitpath . " -C " . $fullpath . " reset --hard HEAD", $rout, $rval);
+        
+        print_r($rout);
+        echo "\r\n";
+        echo "Value: " . $rval . "\r\n";
+        
+        $gout = null;
+        $gval = null;
+        exec($gitcommand, $gout, $gval);
+        
+        print_r($gout);
+        echo "\r\n";
+        echo "Value: " . $gval . "\r\n";
+
+    }
+    
+    function branchExists($repourl, $branch)
+    {
+        $branches = array();
+            
+        exec("git ls-remote --heads " . $repourl, $branches);
+        
+        $doesbranchexist = false;
+        
+        foreach($branches as $b) 
+        {
+            if(strpos($b, $branch) !== false)
+            {
+                $doesbranchexist = true;
+                break;
+            }
+        }      
+        return $doesbranchexist;
+    }
+    
+    function isGitInstalled()
+    {
+        if(strlen(exec("which git")) > 0)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
+    function isRepo($path)
+    {
+        $out = null;
+        $ec = null;
+        exec("git -C " . $path . " status", $out, $ec);
+
+        if($ec === 0)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        } 
     }
 ?>

@@ -89,7 +89,7 @@
             break;
 
         case "push":
-            cloneRepo($payload);
+            getRepo($payload);
             break;
 
     //	case 'create':
@@ -103,7 +103,7 @@
             break;
     }
     
-    function cloneRepo($payload)
+    function getRepo($payload)
     {
         if(isset($_GET['projectpath']))
         {

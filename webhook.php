@@ -89,7 +89,7 @@
             break;
 
         case "push":
-            getRepo($payload);
+            cloneRepo($payload);
             break;
 
     //	case 'create':
@@ -103,7 +103,7 @@
             break;
     }
     
-    function getRepo($payload)
+    function cloneRepo($payload)
     {
         if(isset($_GET['projectpath']))
         {
@@ -126,27 +126,76 @@
         {
             $gitpath = exec("which git");
         }
-           
-        if(!isRepo($fullpath))
-        {
-            echo "Project path not a repository" . "\r\n";
-            return false;
+        
+        // 2. Resolve if we are cloning some other branch than master
+        $branch = "";
+    
+        if(isset($_GET["branch"]))
+        {           
+            if(branchExists($payload->repository->clone_url, $_GET["branch"]))
+            {
+                $branch = "-b " . $_GET["branch"] . " --single-branch ";
+            }
+            else
+            {
+                echo "Branch does not exist, cloning without branch handle" . "\r\n";
+                $branch = "";
+            } 
         }
-           
-        $gitcommand = $gitpath . " -C " . $fullpath . " pull ";
+        else
+        {
+            $branch = "";
+        }      
+        
+        $gitcommand = "";
+        $pull = false;
+        
+        if(isRepo($fullpath))
+        {
+            $gitcommand .= $gitpath . " -C " . $fullpath . " pull ";
+            $pull = true;
+        }
+        else
+        {
+            $gitcommand .= $gitpath . " clone ";
+        }
+        
+        if(!$pull)
+            $gitcommand .= $branch;
+        
         $gitcommand .= $payload->repository->clone_url;
         
-        echo $gitcommand . "\r\n";            
-
-        echo "Resetting HEAD before pull\r\n";
-            
-        $rout = null;
-        $rval = null;
-        exec($gitpath . " -C " . $fullpath . " reset --hard HEAD", $rout, $rval);
+        if(!$pull)
+            $gitcommand .= " " . $fullpath;
         
-        print_r($rout);
-        echo "\r\n";
-        echo "Value: " . $rval . "\r\n";
+        echo $gitcommand . "\r\n";
+        
+        
+        if($pull)
+        {
+            echo "Resetting HEAD before pull\r\n";
+            
+            $rout = null;
+            $rval = null;
+            exec($gitpath . " -C " . $fullpath . " reset --hard HEAD", $rout, $rval);
+            
+            print_r($rout);
+            echo "\r\n";
+            echo "Value: " . $rval . "\r\n";
+        }
+        
+        if(!$pull)
+        {
+            echo "Mkdir before clone so PHP gets rights to the folder\r\n";
+            
+            $mout = null;
+            $mval = null;
+            exec("mkdir -p " . $fullpath . " 2->&1", $mout, $mval);
+            
+            print_r($mout);
+            echo "\r\n";
+            echo "Value: " . $mval . "\r\n";
+        }
         
         $gout = null;
         $gval = null;

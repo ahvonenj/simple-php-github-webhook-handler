@@ -19,8 +19,9 @@
 
     set_exception_handler(function($e) 
     {
+        //echo "Error on line {$e->getLine()}: " . htmlSpecialChars($e->getMessage());
         header("HTTP/1.1 500 Internal Server Error");
-        echo "Error on line {$e->getLine()}: " . htmlSpecialChars($e->getMessage());
+        
         die();
     });
 
@@ -138,15 +139,23 @@
         
         echo $gitcommand . "\r\n";            
 
-        echo "Resetting HEAD before pull\r\n";
+        echo "Resetting before pull\r\n";
             
-        $rout = null;
+        /*$rout = null;
         $rval = null;
-        exec($gitpath . " -C " . $fullpath . " reset --hard HEAD", $rout, $rval);
+        exec($gitpath . " -C " . $fullpath . " fetch --all", $rout, $rval);
         
         print_r($rout);
         echo "\r\n";
-        echo "Value: " . $rval . "\r\n";
+        echo "Value: " . $rval . "\r\n";*/
+        
+        $fout = null;
+        $fval = null;
+        exec($gitpath . " -C " . $fullpath . " reset --hard master", $fout, $fval);
+        
+        print_r($fout);
+        echo "\r\n";
+        echo "Value: " . $fval . "\r\n";
         
         $gout = null;
         $gval = null;
